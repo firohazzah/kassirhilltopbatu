@@ -1,0 +1,22 @@
+.chart-card {
+    border: 1px solid #eee8e1;
+    border-radius: 16px;
+    transition: all .3s ease;
+}
+
+.chart-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(64, 41, 31, .08);
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 290px;
+}
+
+@media (max-width: 576px) {
+    .chart-container {
+        height: 240px;
+    }
+}
