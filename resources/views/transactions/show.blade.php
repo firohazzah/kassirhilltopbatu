@@ -29,8 +29,13 @@
         {{-- Informasi transaksi --}}
         <div class="receipt-info">
             <div class="d-flex justify-content-between gap-3 mb-2">
-                <span>No. Nota</span>
-                <strong>{{ $transaction->invoice_number }}</strong>
+                <div> <strong>No. Antrean</strong>
+            <h2>{{ $transaction->order_number ?? '-' }}</h2>
+            </div>
+
+            <div>
+             <strong>No. Nota</strong>
+                {{ $transaction->invoice_number }}
             </div>
 
             <div class="d-flex justify-content-between gap-3 mb-2">

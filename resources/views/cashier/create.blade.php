@@ -3,9 +3,19 @@
 
 @section('content')
 
-<div class="mb-4">
-    <h1 class="h3 page-title mb-1">Kasir</h1>
-    <div class="text-secondary">Pilih menu untuk dimasukkan ke keranjang.</div>
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap">
+    <div>
+        <h1 class="h3 page-title mb-1">Kasir</h1>
+        <div class="text-secondary">
+            Pilih menu untuk dimasukkan ke keranjang.
+        </div>
+    </div>
+
+    <a href="{{ route('kasir.kiosk') }}"
+       class="btn btn-warning mt-2 mt-md-0">
+        <i class="fas fa-receipt"></i>
+        Antrean Kiosk
+    </a>
 </div>
 
 <form method="POST" action="{{ route('kasir.store') }}" id="checkoutForm">
