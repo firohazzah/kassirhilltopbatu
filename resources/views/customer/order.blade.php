@@ -829,9 +829,9 @@ document.getElementById('customerCheckoutForm')
         submitButton.textContent = 'Memproses pesanan...';
 
         try {
-
-            const response = await fetch(
-                "{{ route('customer.checkout') }}",
+            
+           const response = await fetch(
+    "{{ route('customer.checkout', [], false) }}",
                 {
                     method: 'POST',
 

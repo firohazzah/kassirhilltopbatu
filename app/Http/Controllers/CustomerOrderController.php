@@ -101,27 +101,23 @@ class CustomerOrderController extends Controller
                 now()->format('YmdHis') . '-' .
                 Str::upper(Str::random(4));
 
-            $transaction = Transaction::create([
-                'invoice_number' => $invoiceNumber,
-                'order_number' => $orderNumber,
-                'order_type' => 'kiosk',
-
-                'customer_name' => $data['customer_name'],
-                'subtotal' => $subtotal,
-                'discount' => 0,
-                'total' => $subtotal,
-
-                'payment_method' => $data['payment_method'],
-                'amount_paid' => 0,
-                'change_amount' => 0,
-
-                'status' => 'pending',
-                'payment_status' => 'pending',
-                'order_status' => 'waiting',
-
-                'notes' => 'Pesanan dari Customer Kiosk',
-            ]);
-
+          $transaction = Transaction::create([
+    'invoice_number' => $invoiceNumber,
+    'order_number' => $orderNumber,
+    'order_date' => now()->toDateString(),
+    'order_type' => 'kiosk',
+    'customer_name' => $data['customer_name'],
+    'subtotal' => $subtotal,
+    'discount' => 0,
+    'total' => $subtotal,
+    'payment_method' => $data['payment_method'],
+    'amount_paid' => 0,
+    'change_amount' => 0,
+    'status' => 'pending',
+    'payment_status' => 'pending',
+    'order_status' => 'waiting',
+    'notes' => 'Pesanan dari Customer Kiosk',
+]);
             // Simpan detail produk pesanan
             $transaction->items()->createMany($orderItems);
 

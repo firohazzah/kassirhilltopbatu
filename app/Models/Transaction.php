@@ -8,21 +8,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Transaction extends Model
 {
     protected $fillable = [
-        'invoice_number',
-        'customer_name',
-        'subtotal',
-        'discount',
-        'total',
-        'payment_method',
-        'amount_paid',
-        'change_amount',
-        'status',
-        'notes',
-        'order_number',
-        'order_type',
-        'payment_status',
-        'order_status',
-    ];
+    'invoice_number',
+    'customer_name',
+    'subtotal',
+    'discount',
+    'total',
+    'payment_method',
+    'amount_paid',
+    'change_amount',
+    'status',
+    'notes',
+    'order_number',
+    'order_date',
+    'order_type',
+    'payment_status',
+    'order_status',
+];
 
     protected $casts = [
         'subtotal' => 'integer',
