@@ -1,212 +1,429 @@
 
 @extends('layouts.app')
 
-@section('title', 'Bukti Pesanan - Kasir Kafe')
+@section('title', 'Struk Pesanan - Kasir Kafe')
 
 @section('content')
 
 <style>
+
+    .payment-status {
+    text-align: center;
+    border: 1px solid #eab308;
+    background: #fef9c3;
+    color: #854d0e;
+    padding: 10px;
+    font-weight: bold;
+    margin: 12px 0;
+    border-radius: 5px;
+    letter-spacing: 1px;
+}
+
+/* Animasi saat menunggu pembayaran */
+.payment-status.waiting {
+    animation: pulseWaiting 1.5s infinite;
+}
+
+@keyframes pulseWaiting {
+    0% {
+        box-shadow: 0 0 0 0 rgba(234, 179, 8, .45);
+        opacity: 1;
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(234, 179, 8, 0);
+        opacity: .75;
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(234, 179, 8, 0);
+        opacity: 1;
+    }
+}
+
+/* Status lunas */
+.payment-status.paid {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #16a34a;
+    animation: none;
+}
+
+/* Status dibatalkan */
+.payment-status.cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #dc2626;
+    animation: none;
+}
+
     body {
-        background: #f7f5f1;
+        background: #e9e9e9;
+        color: #111;
+        font-family: Arial, sans-serif;
     }
 
-    .receipt-wrapper {
-        max-width: 650px;
-        margin: 40px auto;
-        padding: 0 15px;
+    .receipt-page {
+        padding: 35px 15px;
+        display: flex;
+        justify-content: center;
     }
 
-    .receipt-card {
-        background: white;
-        border-radius: 18px;
-        padding: 30px;
-        box-shadow: 0 5px 25px rgba(0,0,0,.07);
+    .thermal-receipt {
+        width: 340px;
+        background: #fff;
+        padding: 25px 20px;
+        box-shadow: 0 3px 15px rgba(0,0,0,.12);
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        color: #111;
     }
 
-    .receipt-header {
+    .center {
         text-align: center;
-        padding-bottom: 20px;
-        border-bottom: 2px dashed #ded2c7;
     }
 
-    .receipt-header h2 {
-        color: #654936;
-        font-weight: 800;
+    .brand {
+        font-family: Arial, sans-serif;
+        font-size: 23px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        margin-bottom: 4px;
+    }
+
+    .brand-subtitle {
+        font-size: 10px;
+        letter-spacing: 1px;
+    }
+
+    .receipt-logo {
+        font-size: 27px;
+        margin-bottom: 8px;
+    }
+
+    .divider {
+        border-top: 1px dashed #111;
+        margin: 13px 0;
+    }
+
+    .double-divider {
+        border-top: 2px solid #111;
+        margin: 13px 0;
+    }
+
+    .row-receipt {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin: 5px 0;
+    }
+
+    .row-receipt span:last-child {
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+
+    .queue-box {
+        border: 2px solid #111;
+        padding: 12px 5px;
+        margin: 15px 0;
+        text-align: center;
+    }
+
+    .queue-label {
+        font-size: 10px;
+        font-weight: bold;
+        letter-spacing: 2px;
     }
 
     .queue-number {
-        background: #654936;
-        color: white;
-        border-radius: 14px;
-        padding: 20px;
-        text-align: center;
-        margin: 25px 0;
+        font-size: 31px;
+        font-weight: 900;
+        margin-top: 5px;
+        letter-spacing: 2px;
     }
 
-    .queue-number small {
-        display: block;
-        opacity: .85;
+    .section-label {
+        font-weight: bold;
+        margin-bottom: 8px;
     }
 
-    .queue-number h1 {
-        font-size: 42px;
-        font-weight: 800;
-        margin: 5px 0 0;
+    .item {
+        margin: 10px 0;
     }
 
-    .receipt-row {
+    .item-name {
+        font-weight: bold;
+        overflow-wrap: anywhere;
+    }
+
+    .item-detail {
         display: flex;
         justify-content: space-between;
-        gap: 15px;
+        gap: 8px;
+        margin-top: 3px;
+    }
+
+    .total-row {
+        font-size: 15px;
+        font-weight: 900;
+        margin-top: 10px;
+    }
+
+    .payment-status {
+        text-align: center;
+        border: 1px solid #111;
+        padding: 8px;
+        font-weight: bold;
         margin: 12px 0;
     }
 
-    .receipt-item {
-        padding: 12px 0;
-        border-bottom: 1px solid #eee;
+    .account-box {
+        border: 1px dashed #111;
+        padding: 9px;
+        margin-top: 10px;
     }
 
-    .receipt-total {
-        border-top: 2px dashed #ded2c7;
-        padding-top: 18px;
-        margin-top: 18px;
-        font-size: 20px;
-        font-weight: 800;
-        color: #654936;
+    .receipt-footer {
+        text-align: center;
+        line-height: 1.7;
+        font-size: 11px;
     }
 
-    .payment-info {
-        background: #faf8f5;
-        padding: 16px;
-        border-radius: 12px;
-        margin-top: 20px;
+    .print-actions {
+        width: 340px;
+        margin: 0 auto 35px;
     }
 
     .btn-print {
         background: #654936;
         color: white;
         border: none;
-        border-radius: 10px;
-        padding: 12px 20px;
-        font-weight: 700;
+        width: 100%;
+        padding: 13px;
+        border-radius: 8px;
+        font-weight: bold;
     }
 
-    .btn-print:hover {
-        background: #432f24;
-        color: white;
+    .btn-print:disabled {
+        opacity: .5;
+        cursor: not-allowed;
+    }
+
+    #returnMessage {
+        display: none;
+        text-align: center;
+        font-size: 12px;
+        margin-top: 12px;
     }
 
     @media print {
-        body {
-            background: white;
+        @page {
+            size: 80mm auto;
+            margin: 0;
         }
 
-        .receipt-wrapper {
-            margin: 0 auto;
+        html, body {
+            width: 80mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
         }
 
-        .receipt-card {
-            box-shadow: none;
+        body * {
+            visibility: hidden;
         }
 
-        .no-print {
+        .receipt-page,
+        .receipt-page * {
+            visibility: visible;
+        }
+
+        .receipt-page {
+            display: block;
+            width: 80mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .thermal-receipt {
+            width: 80mm !important;
+            max-width: 80mm !important;
+            padding: 5mm 4mm !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            font-size: 11px;
+        }
+
+        .print-actions {
             display: none !important;
         }
     }
 </style>
 
-<div class="receipt-wrapper">
+<div class="receipt-page">
+    <div class="thermal-receipt">
 
-    <div class="receipt-card">
+        {{-- HEADER KAFE --}}
+        <div class="center">
+            <div class="receipt-logo">☕</div>
 
-        <div class="receipt-header">
-            <h2>☕ KASIR KAFE</h2>
-            <p class="text-muted mb-1">Bukti Pemesanan</p>
-            <small>{{ $transaction->created_at->format('d/m/Y H:i') }}</small>
+            <div class="brand">KASIR KAFE</div>
+
+            <div class="brand-subtitle">
+                COFFEE • FOOD • GOOD MOOD
+            </div>
+
+            <div style="margin-top:8px;">
+                BUKTI PEMBAYARAN
+            </div>
         </div>
 
-        <div class="queue-number">
-            <small>NOMOR ANTREAN KAMU</small>
-            <h1>{{ $transaction->order_number }}</h1>
+        <div class="double-divider"></div>
+
+        {{-- INFORMASI TRANSAKSI --}}
+        <div class="row-receipt">
+            <span>Tanggal</span>
+            <span>{{ $transaction->created_at->format('d/m/Y H:i') }}</span>
         </div>
 
-        <div class="receipt-row">
-            <span>Nomor Invoice</span>
-            <strong>{{ $transaction->invoice_number }}</strong>
+        <div class="row-receipt">
+            <span>Invoice</span>
+            <span>{{ $transaction->invoice_number }}</span>
         </div>
 
-        <div class="receipt-row">
-            <span>Nama Pelanggan</span>
-            <strong>{{ $transaction->customer_name }}</strong>
+        <div class="row-receipt">
+            <span>Pelanggan</span>
+            <span>{{ $transaction->customer_name }}</span>
         </div>
 
-        <div class="receipt-row">
-            <span>Metode Pembayaran</span>
-            <strong>
-                {{ $transaction->payment_method == 'cash' ? 'Bayar di Kasir' : 'QRIS' }}
-            </strong>
+        <div class="row-receipt">
+            <span>Pembayaran</span>
+            <span>
+                {{ $transaction->payment_method == 'cash' ? 'Tunai / Kasir' : 'QRIS' }}
+            </span>
         </div>
 
-        <hr>
+        {{-- NOMOR ANTREAN --}}
+        <div class="queue-box">
+            <div class="queue-label">NOMOR ANTREAN</div>
+            <div class="queue-number">
+                {{ $transaction->order_number }}
+            </div>
+        </div>
 
-        <h5 class="font-weight-bold">Detail Pesanan</h5>
+        {{-- DETAIL PESANAN --}}
+        <div class="section-label">DETAIL PESANAN</div>
+
+        <div class="divider"></div>
 
         @foreach ($transaction->items as $item)
-            <div class="receipt-item">
-                <div class="receipt-row mb-1">
-                    <strong>{{ $item->product_name }}</strong>
-                    <strong>
-                        Rp {{ number_format($item->line_total, 0, ',', '.') }}
-                    </strong>
+            <div class="item">
+                <div class="item-name">
+                    {{ $item->product_name }}
                 </div>
 
-                <small class="text-muted">
-                    {{ $item->quantity }} x
-                    Rp {{ number_format($item->price, 0, ',', '.') }}
-                </small>
+                <div class="item-detail">
+                    <span>
+                        {{ $item->quantity }} x
+                        {{ number_format($item->price, 0, ',', '.') }}
+                    </span>
+
+                    <span>
+                        {{ number_format($item->line_total, 0, ',', '.') }}
+                    </span>
+                </div>
             </div>
         @endforeach
 
-        <div class="receipt-row receipt-total">
-            <span>Total</span>
+        <div class="divider"></div>
+
+        {{-- TOTAL --}}
+        <div class="row-receipt total-row">
+            <span>TOTAL</span>
             <span>
                 Rp {{ number_format($transaction->total, 0, ',', '.') }}
             </span>
         </div>
 
-        <div class="payment-info">
+        {{-- STATUS PEMBAYARAN --}}
+        <div class="payment-status waiting" id="paymentStatusBadge">
+    <i class="fas fa-clock"></i>
+    MENUNGGU PEMBAYARAN
+</div>
+        <div class="center" id="paymentInstruction">
+            Silakan menuju kasir untuk melakukan pembayaran.
+        </div>
 
-    <strong>Status Pembayaran:</strong>
+        {{-- PEMBAYARAN BERHASIL --}}
+        <div id="paymentSuccess" style="display:none;">
 
-   <span id="paymentStatusBadge" class="badge bg-warning text-dark">
-    Menunggu Pembayaran
-</span>
+            <div class="double-divider"></div>
 
-    <p id="paymentInstruction" class="mt-3 mb-0">
-        Silakan menuju kasir untuk melakukan pembayaran.
-    </p>
+            <div class="center" style="font-weight:bold;">
+                *** PEMBAYARAN BERHASIL ***
+            </div>
 
+            <p class="center" style="margin-top:8px;">
+                Terima kasih atas pesanan Anda!
+            </p>
 
-    <div id="paymentSuccess"
-         class="alert alert-success mt-3"
-         style="display:none;">
+            <div class="account-box">
+                <div class="center" style="font-weight:bold; margin-bottom:7px;">
+                    INFORMASI AKUN
+                </div>
 
-        <h5 class="font-weight-bold">
-            ✓ Pembayaran Berhasil!
-        </h5>
+                <div class="row-receipt">
+                    <span>Username</span>
+                    <strong>HilltopsBatu</strong>
+                </div>
 
-        <p class="mb-1">
-            Pesanan kamu sudah dikonfirmasi oleh kasir.
-        </p>
+                <div class="row-receipt">
+                    <span>Password</span>
+                    <strong>Americano</strong>
+                </div>
+            </div>
+        </div>
 
-        <p class="mb-0">
-            Kembali ke menu dalam
-            <strong id="countdown">10</strong> detik.
-        </p>
+        <div class="double-divider"></div>
+
+        {{-- FOOTER --}}
+        <div class="receipt-footer">
+            Simpan struk ini sebagai bukti pesanan.
+
+            <br><br>
+
+            Terima kasih telah berkunjung!
+
+            <br>
+
+            <strong>KASIR KAFE</strong>
+
+            <br><br>
+
+            ***** HAVE A NICE DAY *****
+        </div>
+
     </div>
-
 </div>
 
+{{-- TOMBOL CETAK --}}
+<div class="print-actions no-print">
+    <button
+        type="button"
+        class="btn-print"
+        id="printButton"
+        onclick="printReceipt()"
+        disabled>
+
+        <i class="fas fa-print"></i>
+        Cetak Struk
+    </button>
+
+    <p id="returnMessage">
+        Kembali ke halaman pemesanan dalam
+        <strong id="returnCountdown">10</strong> detik...
+    </p>
 </div>
 
 <script>
@@ -215,113 +432,85 @@
 
     let pollingTimer = null;
     let countdownTimer = null;
-    let remainingSeconds = 30;
+    let paymentIsPaid = false;
+    let returnCountdownStarted = false;
 
-    async function checkPaymentStatus() {
-        try {
-            const response = await fetch(statusUrl, {
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Gagal memeriksa status pesanan.');
-            }
-
-            const result = await response.json();
-
-            if (result.payment_status === 'paid') {
-                clearInterval(pollingTimer);
-                showPaymentSuccess();
-            }
-
-            if (
-                result.payment_status === 'failed' ||
-                result.order_status === 'cancelled'
-            ) {
-                clearInterval(pollingTimer);
-
-                document.getElementById('paymentStatusBadge')
-    .className = 'badge bg-danger';
-
-                document.getElementById('paymentStatusBadge')
-                    .textContent = 'Pesanan Dibatalkan';
-
-                document.getElementById('paymentInstruction')
-                    .textContent =
-                    'Silakan hubungi kasir untuk informasi lebih lanjut.';
-            }
-
-        } catch (error) {
-            console.error(error);
+    function printReceipt() {
+        if (!paymentIsPaid) {
+            alert('Pembayaran belum dikonfirmasi.');
+            return;
         }
+
+        window.print();
     }
 
-    function showPaymentSuccess() {
-        const badge = document.getElementById('paymentStatusBadge');
+    window.addEventListener('afterprint', function () {
+        if (paymentIsPaid) {
+            startReturnCountdown();
+        }
+    });
 
-        badge.className = 'badge bg-success';
-        badge.textContent = 'LUNAS';
+    function startReturnCountdown() {
+        if (returnCountdownStarted) return;
 
-        document.getElementById('paymentInstruction')
-            .textContent = 'Terima kasih sudah melakukan pembayaran!';
+        returnCountdownStarted = true;
 
-        document.getElementById('paymentSuccess').style.display = 'block';
+        const message = document.getElementById('returnMessage');
+        const countdown = document.getElementById('returnCountdown');
 
-        countdownTimer = setInterval(function() {
-            remainingSeconds--;
+        let seconds = 10;
 
-            document.getElementById('countdown').textContent =
-                remainingSeconds;
+        message.style.display = 'block';
 
-            if (remainingSeconds <= 0) {
+        countdownTimer = setInterval(function () {
+            seconds--;
+            countdown.textContent = seconds;
+
+            if (seconds <= 0) {
                 clearInterval(countdownTimer);
                 window.location.href = orderUrl;
             }
         }, 1000);
     }
 
-    // Periksa status pertama kali
-    checkPaymentStatus();
+    if (result.payment_status === 'paid') {
+    if (!paymentIsPaid) {
+        paymentIsPaid = true;
 
-    // Periksa kembali setiap 3 detik
-    pollingTimer = setInterval(checkPaymentStatus, 3000);
+        clearInterval(pollingTimer);
 
-            <div class="payment-info">
+        const badge = document.getElementById('paymentStatusBadge');
 
-            <strong>Status Pembayaran:</strong>
+        badge.className = 'payment-status paid';
+        badge.innerHTML = '<i class="fas fa-check-circle"></i> LUNAS';
 
-            <span id="paymentStatusBadge" class="badge bg-warning text-dark">
-                Menunggu Pembayaran
-            </span>
+        document.getElementById('paymentInstruction')
+            .textContent = 'Pembayaran telah dikonfirmasi oleh kasir.';
 
-            <p id="paymentInstruction" class="mt-3 mb-0">
-                Silakan menuju kasir untuk melakukan pembayaran.
-            </p>
+        document.getElementById('paymentSuccess')
+            .style.display = 'block';
 
-            <div id="paymentSuccess"
-                 class="alert alert-success mt-3"
-                 style="display:none;">
+        document.getElementById('printButton')
+            .disabled = false;
+    }
 
-                <h5 class="fw-bold">
-                    ✓ Pembayaran Berhasil!
-                </h5>
+} else if (
+    result.payment_status === 'failed' ||
+    result.order_status === 'cancelled'
+) {
+    clearInterval(pollingTimer);
 
-                <p class="mb-1">
-                    Pesanan kamu sudah dikonfirmasi oleh kasir.
-                </p>
+    const badge = document.getElementById('paymentStatusBadge');
 
-                <p class="mb-0">
-                    Kembali ke menu dalam
-                    <strong id="countdown">30</strong> detik.
-                </p>
-            </div>
+    badge.className = 'payment-status cancelled';
+    badge.innerHTML = '<i class="fas fa-times-circle"></i> DIBATALKAN';
 
-        </div>
+    document.getElementById('paymentInstruction')
+        .textContent = 'Silakan hubungi kasir untuk informasi lebih lanjut.';
 
-    </div>
-</div>
+    document.getElementById('printButton')
+        .disabled = true;
+}
 </script>
 
 @endsection
