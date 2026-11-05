@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Midtrans\Config;
+use Midtrans\CoreApi;
+use Throwable;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Services\OrderNumberService;
@@ -123,6 +126,93 @@ class CustomerOrderController extends Controller
 
             return $transaction;
         });
+
+        // Jika customer memilih QRIS, buat transaksi ke Midtrans
+if ($transaction->payment_method === 'qris') {
+    try {
+        Config::$serverKey = config('services.midtrans.server_key');
+        Config::$isProduction = (bool) config('services.midtrans.is_production');
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+
+        $params = [
+            'payment_type' => 'qris',
+
+            'transaction_details' => [
+                'order_id' => $transaction->invoice_number,
+                'gross_amount' => (int) $transaction->total,
+            ],
+
+            'qris' => [
+                'acquirer' => 'gopay',
+            ],
+
+            'customer_details' => [
+                'first_name' => $transaction->customer_name,
+            ],
+        ];
+
+        $midtransResponse = CoreApi::charge($params);
+
+        // Ambil URL gambar QRIS dari respons Midtrans
+        $qrisUrl = null;
+
+        if (!empty($midtransResponse->actions)) {
+            foreach ($midtransResponse->actions as $action) {
+                if (
+                    isset($action->name, $action->url) &&
+                    strpos($action->name, 'generate-qr-code') !== false
+                ) {
+                    $qrisUrl = $action->url;
+                    break;
+                }
+            }
+        }
+
+        if (!$qrisUrl) {
+            throw new \Exception(
+                'Midtrans tidak memberikan URL QR Code.'
+            );
+        }
+
+        $transaction->update([
+            'midtrans_transaction_id' => $midtransResponse->transaction_id ?? null,
+            'midtrans_status' => $midtransResponse->transaction_status ?? 'pending',
+            'qris_url' => $qrisUrl,
+            'payment_status' => 'pending',
+            'status' => 'pending',
+            'order_status' => 'waiting',
+        ]);
+
+    } catch (Throwable $e) {
+
+        // Batalkan pesanan dan kembalikan stok jika pembuatan QRIS gagal
+        DB::transaction(function () use ($transaction) {
+            $transaction->load('items');
+
+            foreach ($transaction->items as $item) {
+                if ($item->product_id) {
+                    Product::where('id', $item->product_id)
+                        ->increment('stock', $item->quantity);
+                }
+            }
+
+            $transaction->update([
+                'status' => 'cancelled',
+                'payment_status' => 'failed',
+                'order_status' => 'cancelled',
+                'midtrans_status' => 'failed',
+            ]);
+        });
+
+        report($e);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal membuat pembayaran QRIS. Silakan coba kembali.',
+        ], 500);
+    }
+}
 
         // Link bukti pesanan dengan masa berlaku 2 jam
         $receiptUrl = URL::temporarySignedRoute(

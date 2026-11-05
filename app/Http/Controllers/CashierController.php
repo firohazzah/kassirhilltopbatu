@@ -187,11 +187,23 @@ public function confirmKioskPayment(
         ->with('success', 'Pembayaran berhasil dikonfirmasi.');
 }
 
-    public function index()
-    {
-        $transactions = Transaction::latest()->paginate(15);
-        return view('transactions.index', compact('transactions'));
+    public function index(Request $request)
+{
+    $perPage = (int) $request->input('per_page', 10);
+
+    // Pilihan jumlah data per halaman
+    $allowedPerPage = [10, 20, 30, 50, 100];
+
+    if (!in_array($perPage, $allowedPerPage)) {
+        $perPage = 10;
     }
+
+    $transactions = Transaction::latest()
+        ->paginate($perPage)
+        ->withQueryString();
+
+    return view('transactions.index', compact('transactions', 'perPage'));
+}
 
   public function show(Transaction $transaction)
 {

@@ -217,6 +217,41 @@
         margin-top: 12px;
     }
 
+    
+.qris-payment {
+    text-align: center;
+    margin: 18px 0;
+    padding: 12px;
+    border: 1px dashed #654936;
+    border-radius: 8px;
+}
+
+.qris-payment img {
+    display: block;
+    width: 210px;
+    max-width: 100%;
+    height: auto;
+    margin: 12px auto;
+}
+
+.qris-payment .qris-amount {
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.qris-payment small {
+    display: block;
+    margin-top: 8px;
+    line-height: 1.5;
+}
+
+@media print {
+    .qris-payment {
+        display: none !important;
+    }
+}
+
+
     @media print {
         @page {
             size: 80mm auto;
@@ -346,14 +381,49 @@
             </span>
         </div>
 
-        {{-- STATUS PEMBAYARAN --}}
-        <div class="payment-status waiting" id="paymentStatusBadge">
+       
+{{-- STATUS PEMBAYARAN --}}
+<div class="payment-status waiting" id="paymentStatusBadge">
     <i class="fas fa-clock"></i>
     MENUNGGU PEMBAYARAN
 </div>
-        <div class="center" id="paymentInstruction">
-            Silakan menuju kasir untuk melakukan pembayaran.
+
+{{-- INSTRUKSI TUNAI --}}
+<div
+    class="center"
+    id="paymentInstruction"
+    @if($transaction->payment_method === 'qris') style="display:none;" @endif
+>
+    Silakan menuju kasir untuk melakukan pembayaran.
+</div>
+
+{{-- QRIS --}}
+@if($transaction->payment_method === 'qris')
+    <div class="qris-payment" id="qrisPayment">
+        <strong>SCAN QRIS UNTUK MEMBAYAR</strong>
+
+        @if($transaction->qris_url)
+            <img
+                src="{{ $transaction->qris_url }}"
+                alt="QR Code Pembayaran"
+                id="qrisImage"
+            >
+        @else
+            <p>QR Code belum tersedia. Silakan hubungi kasir.</p>
+        @endif
+
+        <div class="qris-amount">
+            Rp {{ number_format($transaction->total, 0, ',', '.') }}
         </div>
+
+        <small>
+            Buka aplikasi pembayaran dan scan QR Code di atas.
+            <br>
+            Halaman ini akan memperbarui status pembayaran otomatis.
+        </small>
+    </div>
+@endif
+
 
         {{-- PEMBAYARAN BERHASIL --}}
         <div id="paymentSuccess" style="display:none;">
@@ -427,90 +497,160 @@
 </div>
 
 <script>
-    const statusUrl = @json($statusUrl);
-    const orderUrl = @json(route('customer.order'));
+    
+const statusUrl = @json($statusUrl);
+const orderUrl = @json(route('customer.order'));
 
-    let pollingTimer = null;
-    let countdownTimer = null;
-    let paymentIsPaid = false;
-    let returnCountdownStarted = false;
+const paymentMethod = @json($transaction->payment_method);
 
-    function printReceipt() {
-        if (!paymentIsPaid) {
-            alert('Pembayaran belum dikonfirmasi.');
-            return;
-        }
+let pollingTimer = null;
+let countdownTimer = null;
+let paymentIsPaid = false;
+let returnCountdownStarted = false;
 
-        window.print();
-    }
-
-    window.addEventListener('afterprint', function () {
-        if (paymentIsPaid) {
-            startReturnCountdown();
-        }
-    });
-
-    function startReturnCountdown() {
-        if (returnCountdownStarted) return;
-
-        returnCountdownStarted = true;
-
-        const message = document.getElementById('returnMessage');
-        const countdown = document.getElementById('returnCountdown');
-
-        let seconds = 10;
-
-        message.style.display = 'block';
-
-        countdownTimer = setInterval(function () {
-            seconds--;
-            countdown.textContent = seconds;
-
-            if (seconds <= 0) {
-                clearInterval(countdownTimer);
-                window.location.href = orderUrl;
-            }
-        }, 1000);
-    }
-
-    if (result.payment_status === 'paid') {
+function printReceipt() {
     if (!paymentIsPaid) {
-        paymentIsPaid = true;
-
-        clearInterval(pollingTimer);
-
-        const badge = document.getElementById('paymentStatusBadge');
-
-        badge.className = 'payment-status paid';
-        badge.innerHTML = '<i class="fas fa-check-circle"></i> LUNAS';
-
-        document.getElementById('paymentInstruction')
-            .textContent = 'Pembayaran telah dikonfirmasi oleh kasir.';
-
-        document.getElementById('paymentSuccess')
-            .style.display = 'block';
-
-        document.getElementById('printButton')
-            .disabled = false;
+        alert('Pembayaran belum dikonfirmasi.');
+        return;
     }
 
-} else if (
-    result.payment_status === 'failed' ||
-    result.order_status === 'cancelled'
-) {
+    window.print();
+}
+
+window.addEventListener('afterprint', function () {
+    if (paymentIsPaid) {
+        startReturnCountdown();
+    }
+});
+
+function startReturnCountdown() {
+    if (returnCountdownStarted) return;
+
+    returnCountdownStarted = true;
+
+    const message = document.getElementById('returnMessage');
+    const countdown = document.getElementById('returnCountdown');
+
+    let seconds = 10;
+
+    message.style.display = 'block';
+
+    countdownTimer = setInterval(function () {
+        seconds--;
+        countdown.textContent = seconds;
+
+        if (seconds <= 0) {
+            clearInterval(countdownTimer);
+            window.location.href = orderUrl;
+        }
+    }, 1000);
+}
+
+function setPaid() {
+    if (paymentIsPaid) return;
+
+    paymentIsPaid = true;
+
+    clearInterval(pollingTimer);
+
+    const badge = document.getElementById('paymentStatusBadge');
+
+    badge.className = 'payment-status paid';
+    badge.innerHTML =
+        '<i class="fas fa-check-circle"></i> LUNAS';
+
+    document.getElementById('paymentInstruction')
+        .textContent = 'Pembayaran telah berhasil dikonfirmasi.';
+
+    document.getElementById('paymentInstruction')
+        .style.display = 'block';
+
+    document.getElementById('paymentSuccess')
+        .style.display = 'block';
+
+    document.getElementById('printButton')
+        .disabled = false;
+
+    // Sembunyikan QRIS setelah pembayaran berhasil
+    const qrisPayment = document.getElementById('qrisPayment');
+
+    if (qrisPayment) {
+        qrisPayment.style.display = 'none';
+    }
+
+    // Untuk sementara tampilkan tombol cetak.
+    // Cetak otomatis tanpa dialog akan dihubungkan
+    // setelah konfigurasi QZ Tray selesai.
+}
+
+function setCancelled() {
     clearInterval(pollingTimer);
 
     const badge = document.getElementById('paymentStatusBadge');
 
     badge.className = 'payment-status cancelled';
-    badge.innerHTML = '<i class="fas fa-times-circle"></i> DIBATALKAN';
+    badge.innerHTML =
+        '<i class="fas fa-times-circle"></i> DIBATALKAN';
 
     document.getElementById('paymentInstruction')
-        .textContent = 'Silakan hubungi kasir untuk informasi lebih lanjut.';
+        .textContent =
+        'Pesanan dibatalkan atau pembayaran gagal. Silakan hubungi kasir.';
 
-    document.getElementById('printButton')
-        .disabled = true;
+    document.getElementById('paymentInstruction')
+        .style.display = 'block';
+
+    document.getElementById('printButton').disabled = true;
+
+    const qrisPayment = document.getElementById('qrisPayment');
+
+    if (qrisPayment) {
+        qrisPayment.style.display = 'none';
+    }
 }
+
+async function checkPaymentStatus() {
+    if (paymentIsPaid) return;
+
+    try {
+        const response = await fetch(statusUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        });
+
+        if (!response.ok) {
+            throw new Error('Gagal mengambil status pembayaran.');
+        }
+
+        const result = await response.json();
+
+        if (result.payment_status === 'paid') {
+            setPaid();
+            return;
+        }
+
+        if (
+            result.payment_status === 'failed' ||
+            result.order_status === 'cancelled'
+        ) {
+            setCancelled();
+            return;
+        }
+
+    } catch (error) {
+        console.error('Pengecekan pembayaran:', error);
+    }
+}
+
+// Cek langsung ketika halaman dibuka,
+// lalu periksa setiap 3 detik.
+checkPaymentStatus();
+
+pollingTimer = setInterval(checkPaymentStatus, 3000);
+
 </script>
 
 @endsection

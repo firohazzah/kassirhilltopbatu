@@ -23,6 +23,9 @@ class Transaction extends Model
     'order_type',
     'payment_status',
     'order_status',
+    'midtrans_transaction_id',
+    'midtrans_status',
+    'qris_url',
 ];
 
     protected $casts = [
